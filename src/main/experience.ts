@@ -1,7 +1,8 @@
-export const WEEKLY_MISSIONS = 12;
+import seasonInfo from "../resource/season.json";
+
 export const DAILY_MISSIONS_XP = 2000;
 
-export const battlePassTierExperience = () => {
+export const battlePassTiers = (): number[] => {
     let experienceList = [0, 0]; // pad index 0 and 1 since they won't be used
 
     // calculate xp from tier 2-50
@@ -18,44 +19,40 @@ export const battlePassTierExperience = () => {
     return experienceList;
 };
 
-export const battlePassTierCumulativeExperience = () => {
+export const cumulativeBattlePassTiers = (): number[] => {
     let cumulativeXP = [0, 0]; // pad index 0 and 1 since they won't be used
-    let experienceList = battlePassTierExperience();
+    let experienceList = battlePassTiers();
 
     let prev = 0;
-    for (let i = 2; i <= 55; i++) {
+    for (let i = 2; i < experienceList.length; i++) {
         const xp = prev + experienceList[i];
         cumulativeXP.push(xp);
-        prev = experienceList[i];
+        prev = xp;
     }
 
     return cumulativeXP;
 };
 
-export const weeklyMissions = () => {
-    // hardcoding weekly missions
-    return [
-        0, // pad index 0 since it won't be used
-        7200, //
-        7200, //
-        9600, //
-        9600, //
-        9600, //
-        9600, //
-        10800, //
-        10800, //
-        10800, //
-        10800, //
-        12000, //
-        12000, //
-    ];
+export const weeklyMissions = (): number[] => {
+    let weeklies = [0]; // pad index 0 since it won't be used
+
+    seasonInfo.weeklies.forEach((weekly) => {
+        weeklies.push(weekly);
+    });
+
+    return weeklies;
 };
 
-export const weeklyMissionsTotal = () => {
-    let weeklies = weeklyMissions();
-    let total = 0;
-    for (let i = 0; i < weeklies.length; i++) {
-        total += weeklies[i] * 3;
+export const cumulativeWeeklyMissions = (): number[] => {
+    let cumulativeXP = [0]; // pad index 0 since it won't be used
+    let weekliesList = weeklyMissions();
+
+    let prev = 0;
+    for (let i = 1; i < weekliesList.length; i++) {
+        const xp = prev + weekliesList[i] * 3;
+        cumulativeXP.push(xp);
+        prev = xp;
     }
-    return total;
+
+    return cumulativeXP;
 };

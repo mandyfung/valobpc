@@ -1,9 +1,9 @@
+import seasonInfo from "../resource/season.json";
 import {
-    battlePassTierCumulativeExperience,
-    battlePassTierExperience,
+    cumulativeBattlePassTiers,
+    cumulativeWeeklyMissions,
     DAILY_MISSIONS_XP,
     weeklyMissions,
-    weeklyMissionsTotal,
 } from "./experience";
 
 export const calculateXPNeededWithoutDailies = (
@@ -11,33 +11,21 @@ export const calculateXPNeededWithoutDailies = (
     battlePassTier: number,
     battlePassCurrentXp: number,
     currentWeek: number,
-    numWeeklyCompleted: number,
-    remainingDays: number
-) => {
-    const battlePassTierXp = battlePassTierCumulativeExperience();
-    const tierGoalXp = battlePassTierXp[tierGoal];
-    const cumulativeCompletedBattlePassTierXp =
-        battlePassTierXp[battlePassTier - 1];
-    const currentBattlePassTierXp =
-        battlePassTierExperience()[battlePassTier] - battlePassCurrentXp;
+    numWeeklyCompleted: number
+): number => {
+    const battlePassTiers = cumulativeBattlePassTiers();
+    const tierGoalXp = battlePassTiers[tierGoal]; // 980000
+    const completedBattlePassXp = battlePassTiers[battlePassTier - 1] + battlePassCurrentXp;
+    let remainingXpNeeded = tierGoalXp - completedBattlePassXp;
 
-    const weeklies = weeklyMissions();
-    const weekliesTotal = weeklyMissionsTotal();
-    let cumulativeWeeklies = 0;
-    for (let i = 0; i < currentWeek; i++) {
-        cumulativeWeeklies += weeklies[i] * 3;
-    }
-    const currentMidWeekXp = weeklies[currentWeek] * numWeeklyCompleted;
-    const weekliesToSubtract =
-        weekliesTotal - cumulativeWeeklies - currentMidWeekXp;
+    const weeklies = cumulativeWeeklyMissions();
+    const midWeekXp = weeklyMissions()[currentWeek] * numWeeklyCompleted;
+    const completedWeeklies = weeklies[currentWeek - 1] + midWeekXp;
+    const remainingWeeklies = weeklies[weeklies.length - 1] - completedWeeklies;
 
-    const xpNeeded =
-        tierGoalXp -
-        cumulativeCompletedBattlePassTierXp -
-        currentBattlePassTierXp -
-        weekliesToSubtract;
+    remainingXpNeeded = remainingXpNeeded - remainingWeeklies;
 
-    return Math.ceil(xpNeeded / remainingDays);
+    return Math.ceil(remainingXpNeeded / remainingDays());
 };
 
 export const calculateXPNeededWithDailies = (
@@ -45,18 +33,23 @@ export const calculateXPNeededWithDailies = (
     battlePassTier: number,
     battlePassCurrentXp: number,
     currentWeek: number,
-    numWeeklyCompleted: number,
-    remainingDays: number
-) => {
+    numWeeklyCompleted: number
+): number => {
     return (
         calculateXPNeededWithoutDailies(
             tierGoal,
             battlePassTier,
             battlePassCurrentXp,
             currentWeek,
-            numWeeklyCompleted,
-            remainingDays
-        ) +
+            numWeeklyCompleted
+        ) -
         DAILY_MISSIONS_XP * 2
     );
+};
+
+export const remainingDays = (): number => {
+    const currentDate = new Date();
+    const endDate = new Date(seasonInfo.endDate);
+
+    return Math.ceil((endDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24)) + 1;
 };
